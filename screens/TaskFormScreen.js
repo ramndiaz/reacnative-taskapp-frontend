@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react'
 import { TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native'
 
 import Layout from '../components/Layout';
-import {saveTask, getTask} from '../api';
+import {saveTask, getTask, updateTask} from '../api';
 
 
 const TaskFormScreen = ({navigation, route}) => {
@@ -14,26 +14,35 @@ const TaskFormScreen = ({navigation, route}) => {
     description: ''
   });
 
-  useEffect(() => {
-    if(route.params && route.params.id){
-      navigation.setOptions({ headerTitle: 'Updating a Task'});
-      (async() => {
-        const task = await getTask(route.params.id);
-        setTask({title: task.title, description: task.description});
-        console.log(task);
-      }) ();
+const [editing, setEditing] = useState(false);
+  
+  const handleSubmit = async () => {
+    try{
+      if (!editing) {
+        await saveTask(task);
+        } else {
+        await updateTask(route.params.id, task);
+        }
+        navigation.navigate('HomeScreen');
+    } catch (err) {
+      console.log(err);
     }
-  }, []);
+  };
 
   
-  const handleSubmit = () => {
-    saveTask(task);
-    navigation.navigate('HomeScreen');
-  }
 
   const handleChange = (name, value) => setTask({...task, [name]: value});
 
-  
+  useEffect(() => {
+    if(route.params && route.params.id){
+      navigation.setOptions({ headerTitle: 'Updating a Task'});
+      setEditing(true);
+      (async() => {
+        const task = await getTask(route.params.id);
+        setTask({title: task.title, description: task.description});
+      }) ();
+    }
+  }, []);
 
   return (
     <Layout>
@@ -51,9 +60,18 @@ const TaskFormScreen = ({navigation, route}) => {
       onChangeText={(text) => handleChange('description', text)}
       value={task.description}
       />
-      <TouchableOpacity style={styles.buttonSave} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>save</Text>
-      </TouchableOpacity>
+      {
+        !editing ? (
+          <TouchableOpacity style={styles.buttonSave} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>save</Text>
+          </TouchableOpacity>
+        ): (
+          <TouchableOpacity style={styles.buttonUpdate} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>update</Text>
+          </TouchableOpacity>
+        )
+      }
+      
     </Layout>
   )
 }
@@ -76,8 +94,19 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderRadius: 10,
     margin: 15,
-    backgroundColor: 'green',
+    backgroundColor: 'blue',
     width: '30%',
+    alignItems: 'center',
+    justifyContent: 'center'
+    
+  },
+  buttonUpdate: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    borderRadius: 10,
+    margin: 15,
+    backgroundColor: 'yellow',
+    width: '40%',
     alignItems: 'center',
     justifyContent: 'center'
     
